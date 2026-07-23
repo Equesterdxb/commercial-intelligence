@@ -44,10 +44,12 @@ class WeeklyReportGenerator:
         num_bookings = len(bookings) if bookings is not None and not bookings.empty else 0
         meta_spend = safe_get(ads.get("meta_ads"), "spend", 0) if ads else 0
         google_spend = safe_get(ads.get("google_ads"), "spend", 0) if ads else 0
+        tiktok_spend = safe_get(ads.get("tiktok_ads"), "spend", 0) if ads else 0
         ig_posts = safe_get(social.get("instagram"), "posts", 0) if social else 0
         fb_posts = safe_get(social.get("facebook"), "posts", 0) if social else 0
         tk_videos = safe_get(social.get("tiktok"), "videos", 0) if social else 0
         roi_pct = safe_get(roi, "roi", 0) if roi else 0
+        total_ad_spend = meta_spend + google_spend + tiktok_spend
 
         html = f"""<!DOCTYPE html>
 <html>
@@ -83,12 +85,20 @@ class WeeklyReportGenerator:
         <h2>📢 Advertising Performance</h2>
         <div>
             <div class="metric">
+                <div class="metric-value">AED {total_ad_spend:.2f}</div>
+                <div class="metric-label">Total Ad Spend</div>
+            </div>
+            <div class="metric">
                 <div class="metric-value">AED {meta_spend:.2f}</div>
                 <div class="metric-label">Meta Ad Spend</div>
             </div>
             <div class="metric">
                 <div class="metric-value">AED {google_spend:.2f}</div>
                 <div class="metric-label">Google Ad Spend</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">AED {tiktok_spend:.2f}</div>
+                <div class="metric-label">TikTok Ad Spend</div>
             </div>
             <div class="metric">
                 <div class="metric-value">{roi_pct:.1f}%</div>
