@@ -1,0 +1,83 @@
+name: Daily Commercial Intelligence Pipeline
+
+on:
+  schedule:
+    # Runs at 4:00 AM UTC (8:00 AM Dubai Time) every day
+    - cron: '0 4 * * *'
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create .env file from secrets
+        run: |
+          cat > .env << EOF
+          BOOKING_API_BASE_URL=${{ secrets.BOOKING_API_BASE_URL }}
+          BOOKING_ADMIN_EMAIL=${{ secrets.BOOKING_ADMIN_EMAIL }}
+          BOOKING_ADMIN_PASSWORD=${{ secrets.BOOKING_ADMIN_PASSWORD }}
+          META_ACCESS_TOKEN=${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID=${{ secrets.META_AD_ACCOUNT_ID }}
+          FACEBOOK_PAGE_ID=${{ secrets.FACEBOOK_PAGE_ID }}
+          INSTAGRAM_BUSINESS_ACCOUNT_ID=${{ secrets.INSTAGRAM_BUSINESS_ACCOUNT_ID }}
+          GOOGLE_ADS_DEVELOPER_TOKEN=${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN }}
+          GOOGLE_ADS_CLIENT_ID=${{ secrets.GOOGLE_ADS_CLIENT_ID }}
+          GOOGLE_ADS_CLIENT_SECRET=${{ secrets.GOOGLE_ADS_CLIENT_SECRET }}
+          GOOGLE_ADS_REFRESH_TOKEN=${{ secrets.GOOGLE_ADS_REFRESH_TOKEN }}
+          GOOGLE_ADS_CUSTOMER_ID=${{ secrets.GOOGLE_ADS_CUSTOMER_ID }}
+          GOOGLE_ADS_LOGIN_CUSTOMER_ID=${{ secrets.GOOGLE_ADS_LOGIN_CUSTOMER_ID }}
+          GA4_PROPERTY_ID=${{ secrets.GA4_PROPERTY_ID }}
+          GA4_SERVICE_ACCOUNT_JSON_PATH=${{ secrets.GA4_SERVICE_ACCOUNT_JSON_PATH }}
+          TIKTOK_CLIENT_KEY=${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET=${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_REFRESH_TOKEN=${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          EOF
+
+      - name: Create GA4 service account file (if needed)
+        if: vars.HAS_GA4_SECRET == 'true'
+        run: |
+          mkdir -p credentials
+          echo "${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}" > credentials/ga4-service-account.json
+
+      - name: Run pipeline
+        run: python -m collectors.orchestrator
+
+      - name: Generate reports
+        run: python reports/report_generator.py
+
+      - name: Commit reports
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add reports/*.html
+          git diff --quiet && git diff --staged --quiet || (git commit -m "📊 Daily report: $(date '+%Y-%m-%d')" && git push)
+
+      - name: Upload database artifact
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: equester-database
+          path: equester_commercial.db
+          retention-days: 30
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Pipeline failed at $(date)"
+          exit 1
