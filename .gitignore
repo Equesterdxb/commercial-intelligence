@@ -55,6 +55,3 @@ htmlcov/
 # Credentials (never commit)
 credentials/
 !credentials/.gitkeep
-
-# Reports
-reports/*.html
