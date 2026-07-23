@@ -1,0 +1,60 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database
+equester_commercial.db
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environment
+.venv
+env/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Cache
+.tiktok_token_cache.json
+.DS_Store
+*.pycache
+
+# Credentials (never commit)
+credentials/
+!credentials/.gitkeep
+
+# Reports
+reports/*.html

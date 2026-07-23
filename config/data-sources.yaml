@@ -1,0 +1,52 @@
+sources:
+  bookings:
+    name: "Equester Simulator Bookings"
+    mode: "api"  # csv or api
+    description: "Live booking data from Equester simulator API"
+    enabled: true
+
+  meta_ads:
+    name: "Meta Ads Insights"
+    mode: "api"  # csv or api
+    description: "Ad spend, impressions, clicks from Meta Business Manager"
+    enabled: true
+
+  google_ads:
+    name: "Google Ads Campaign Performance"
+    mode: "api"  # csv or api
+    description: "Campaign metrics from Google Ads API"
+    enabled: true
+
+  website:
+    name: "Google Analytics 4 (GA4)"
+    mode: "api"  # csv or api
+    description: "Website traffic and conversion tracking"
+    enabled: true
+
+  tiktok:
+    name: "TikTok Organic Content"
+    mode: "api"  # csv or api
+    description: "TikTok video performance and audience insights"
+    enabled: true
+
+  social_content:
+    name: "Facebook & Instagram Organic"
+    mode: "api"  # csv or api - FLIP THIS TO api WHEN READY
+    description: "Organic posts and engagement from Facebook Pages and Instagram Business"
+    enabled: true
+
+database:
+  type: "sqlite"
+  path: "equester_commercial.db"
+  schema: "database/schema.sql"
+
+analytics:
+  anonymous_guest_ids: true
+  hash_pii: true
+  retention_days: 365
+
+reporting:
+  frequency: "weekly"
+  day: "monday"
+  time: "09:00"
+  recipients: ["reporting@equester.ae"]
