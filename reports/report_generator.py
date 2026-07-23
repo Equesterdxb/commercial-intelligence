@@ -18,30 +18,36 @@ class WeeklyReportGenerator:
 
     def generate_html_report(self) -> str:
         """Generate HTML weekly report."""
+        # Default values
+        bookings = pd.DataFrame()
+        sources = pd.DataFrame()
+        ads = {"meta_ads": {}, "google_ads": {}}
+        social = {"instagram": {}, "facebook": {}, "tiktok": {}}
+        roi = {"total_ad_spend_aed": 0, "attributed_revenue_aed": 0, "roi": 0}
+
         try:
-            bookings = self.analyzer.get_booking_trends(days=7)
-            sources = self.analyzer.get_booking_sources()
-            ads = self.analyzer.get_ad_performance(days=7)
-            social = self.analyzer.get_social_engagement()
-            roi = self.analyzer.get_roi_summary(days=7)
-        except Exception as e:
-            bookings = pd.DataFrame()
-            sources = pd.DataFrame()
-            ads = {"meta_ads": {}, "google_ads": {}}
-            social = {"instagram": {}, "facebook": {}, "tiktok": {}}
-            roi = {"total_ad_spend_aed": 0, "attributed_revenue_aed": 0, "roi": 0}
+            bookings = self.analyzer.get_booking_trends(days=7) or pd.DataFrame()
+            sources = self.analyzer.get_booking_sources() or pd.DataFrame()
+            ads = self.analyzer.get_ad_performance(days=7) or ads
+            social = self.analyzer.get_social_engagement() or social
+            roi = self.analyzer.get_roi_summary(days=7) or roi
+        except Exception:
+            pass
 
         # Safe getters for optional data
         def safe_get(d, key, default=0):
-            return d.get(key, default) if d else default
+            if not d:
+                return default
+            val = d.get(key, default)
+            return val if val is not None else default
 
-        num_bookings = len(bookings) if not bookings.empty else 0
-        meta_spend = safe_get(ads.get("meta_ads", {}), "spend", 0)
-        google_spend = safe_get(ads.get("google_ads", {}), "spend", 0)
-        ig_posts = safe_get(social.get("instagram", {}), "posts", 0)
-        fb_posts = safe_get(social.get("facebook", {}), "posts", 0)
-        tk_videos = safe_get(social.get("tiktok", {}), "videos", 0)
-        roi_pct = safe_get(roi, "roi", 0)
+        num_bookings = len(bookings) if bookings is not None and not bookings.empty else 0
+        meta_spend = safe_get(ads.get("meta_ads"), "spend", 0) if ads else 0
+        google_spend = safe_get(ads.get("google_ads"), "spend", 0) if ads else 0
+        ig_posts = safe_get(social.get("instagram"), "posts", 0) if social else 0
+        fb_posts = safe_get(social.get("facebook"), "posts", 0) if social else 0
+        tk_videos = safe_get(social.get("tiktok"), "videos", 0) if social else 0
+        roi_pct = safe_get(roi, "roi", 0) if roi else 0
 
         html = f"""<!DOCTYPE html>
 <html>
