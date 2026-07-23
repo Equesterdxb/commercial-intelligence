@@ -25,95 +25,113 @@ class WeeklyReportGenerator:
             social = self.analyzer.get_social_engagement()
             roi = self.analyzer.get_roi_summary(days=7)
         except Exception as e:
-            # Return empty report if data fetch fails
             bookings = pd.DataFrame()
             sources = pd.DataFrame()
             ads = {"meta_ads": {}, "google_ads": {}}
             social = {"instagram": {}, "facebook": {}, "tiktok": {}}
             roi = {"total_ad_spend_aed": 0, "attributed_revenue_aed": 0, "roi": 0}
 
-        html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Equester Commercial Intelligence Report - {self.report_date}</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }}
-                .container {{ max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }}
-                h1 {{ color: #333; border-bottom: 3px solid #007bff; padding-bottom: 10px; }}
-                h2 {{ color: #555; margin-top: 30px; }}
-                .metric {{ display: inline-block; margin: 10px 20px 10px 0; padding: 15px; background: #f9f9f9; border-radius: 5px; border-left: 4px solid #007bff; }}
-                .metric-value {{ font-size: 24px; font-weight: bold; color: #007bff; }}
-                .metric-label {{ font-size: 12px; color: #666; margin-top: 5px; }}
-                table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
-                th, td {{ padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }}
-                th {{ background: #007bff; color: white; }}
-                tr:hover {{ background: #f5f5f5; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>📊 Equester Commercial Intelligence Report</h1>
-                <p>Generated: {self.report_date}</p>
+        # Safe getters for optional data
+        def safe_get(d, key, default=0):
+            return d.get(key, default) if d else default
 
-                <h2>💰 Revenue & Bookings</h2>
-                <div>
-                    <div class="metric">
-                        <div class="metric-value">{len(bookings)}</div>
-                        <div class="metric-label">Bookings (7 days)</div>
-                    </div>
-                </div>
+        num_bookings = len(bookings) if not bookings.empty else 0
+        meta_spend = safe_get(ads.get("meta_ads", {}), "spend", 0)
+        google_spend = safe_get(ads.get("google_ads", {}), "spend", 0)
+        ig_posts = safe_get(social.get("instagram", {}), "posts", 0)
+        fb_posts = safe_get(social.get("facebook", {}), "posts", 0)
+        tk_videos = safe_get(social.get("tiktok", {}), "videos", 0)
+        roi_pct = safe_get(roi, "roi", 0)
 
-                <h2>📢 Advertising Performance</h2>
-                <div>
-                    <div class="metric">
-                        <div class="metric-value">AED {ads['meta_ads'].get('spend', 0):.2f}</div>
-                        <div class="metric-label">Meta Ad Spend</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-value">AED {ads['google_ads'].get('spend', 0):.2f}</div>
-                        <div class="metric-label">Google Ad Spend</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-value">AED {roi['roi']:.1f}%</div>
-                        <div class="metric-label">ROI (7 days)</div>
-                    </div>
-                </div>
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>Equester Commercial Intelligence Report - {self.report_date}</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }}
+        .container {{ max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }}
+        h1 {{ color: #333; border-bottom: 3px solid #007bff; padding-bottom: 10px; }}
+        h2 {{ color: #555; margin-top: 30px; }}
+        .metric {{ display: inline-block; margin: 10px 20px 10px 0; padding: 15px; background: #f9f9f9; border-radius: 5px; border-left: 4px solid #007bff; }}
+        .metric-value {{ font-size: 24px; font-weight: bold; color: #007bff; }}
+        .metric-label {{ font-size: 12px; color: #666; margin-top: 5px; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
+        th, td {{ padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }}
+        th {{ background: #007bff; color: white; }}
+        tr:hover {{ background: #f5f5f5; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Equester Commercial Intelligence Report</h1>
+        <p>Generated: {self.report_date}</p>
 
-                <h2>📱 Social Media Engagement</h2>
-                <div>
-                    <div class="metric">
-                        <div class="metric-value">{social['instagram'].get('posts', 0)}</div>
-                        <div class="metric-label">Instagram Posts</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-value">{social['facebook'].get('posts', 0)}</div>
-                        <div class="metric-label">Facebook Posts</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-value">{social['tiktok'].get('videos', 0)}</div>
-                        <div class="metric-label">TikTok Videos</div>
-                    </div>
-                </div>
-
-                <h2>Booking Sources</h2>
-                <table>
-                    <tr>
-                        <th>Source</th>
-                        <th>Bookings</th>
-                        <th>Revenue (AED)</th>
-                    </tr>
-                    {''.join(f"<tr><td>{row['booking_source']}</td><td>{row['count']}</td><td>AED {row['revenue_aed']:.2f}</td></tr>"
-                      for _, row in sources.iterrows())}
-                </table>
-
-                <p style="color: #999; font-size: 12px; margin-top: 30px;">
-                    This report was automatically generated by the Equester Commercial Intelligence Pipeline.
-                </p>
+        <h2>💰 Revenue & Bookings</h2>
+        <div>
+            <div class="metric">
+                <div class="metric-value">{num_bookings}</div>
+                <div class="metric-label">Bookings (7 days)</div>
             </div>
-        </body>
-        </html>
-        """
+        </div>
+
+        <h2>📢 Advertising Performance</h2>
+        <div>
+            <div class="metric">
+                <div class="metric-value">AED {meta_spend:.2f}</div>
+                <div class="metric-label">Meta Ad Spend</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">AED {google_spend:.2f}</div>
+                <div class="metric-label">Google Ad Spend</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">{roi_pct:.1f}%</div>
+                <div class="metric-label">ROI (7 days)</div>
+            </div>
+        </div>
+
+        <h2>📱 Social Media Engagement</h2>
+        <div>
+            <div class="metric">
+                <div class="metric-value">{ig_posts}</div>
+                <div class="metric-label">Instagram Posts</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">{fb_posts}</div>
+                <div class="metric-label">Facebook Posts</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">{tk_videos}</div>
+                <div class="metric-label">TikTok Videos</div>
+            </div>
+        </div>
+
+        <h2>Booking Sources</h2>"""
+
+        if not sources.empty:
+            html += """<table>
+                <tr>
+                    <th>Source</th>
+                    <th>Bookings</th>
+                    <th>Revenue (AED)</th>
+                </tr>"""
+            for _, row in sources.iterrows():
+                source = row.get('booking_source', 'Unknown')
+                count = row.get('count', 0)
+                revenue = row.get('revenue_aed', 0)
+                html += f"<tr><td>{source}</td><td>{count}</td><td>AED {revenue:.2f}</td></tr>"
+            html += "</table>"
+        else:
+            html += "<p>No booking data available yet.</p>"
+
+        html += """
+        <p style="color: #999; font-size: 12px; margin-top: 30px;">
+            This report was automatically generated by the Equester Commercial Intelligence Pipeline.
+        </p>
+    </div>
+</body>
+</html>
+"""
         return html
 
     def save_report(self, filename: str = None) -> str:
