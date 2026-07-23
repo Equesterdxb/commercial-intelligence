@@ -12,9 +12,17 @@ from analytics.analyzer import CommercialAnalyzer
 
 
 class WeeklyReportGenerator:
-    def __init__(self):
+    def __init__(self, start_date=None, end_date=None):
         self.analyzer = CommercialAnalyzer()
         self.report_date = datetime.now().strftime("%Y-%m-%d")
+        self.start_date = start_date
+        self.end_date = end_date
+        # Calculate days since start_date
+        if start_date:
+            self.days_range = (datetime.strptime(end_date or self.report_date, "%Y-%m-%d") -
+                             datetime.strptime(start_date, "%Y-%m-%d")).days
+        else:
+            self.days_range = 7
 
     def generate_html_report(self) -> str:
         """Generate HTML weekly report."""
@@ -26,11 +34,11 @@ class WeeklyReportGenerator:
         roi = {"total_ad_spend_aed": 0, "attributed_revenue_aed": 0, "roi": 0}
 
         try:
-            bookings = self.analyzer.get_booking_trends(days=7) or pd.DataFrame()
+            bookings = self.analyzer.get_booking_trends(days=self.days_range) or pd.DataFrame()
             sources = self.analyzer.get_booking_sources() or pd.DataFrame()
-            ads = self.analyzer.get_ad_performance(days=7) or ads
+            ads = self.analyzer.get_ad_performance(days=self.days_range) or ads
             social = self.analyzer.get_social_engagement() or social
-            roi = self.analyzer.get_roi_summary(days=7) or roi
+            roi = self.analyzer.get_roi_summary(days=self.days_range) or roi
         except Exception:
             pass
 
@@ -50,6 +58,8 @@ class WeeklyReportGenerator:
         tk_videos = safe_get(social.get("tiktok"), "videos", 0) if social else 0
         roi_pct = safe_get(roi, "roi", 0) if roi else 0
         total_ad_spend = meta_spend + google_spend + tiktok_spend
+
+        date_range_text = f"{self.start_date} to {self.end_date or self.report_date}" if self.start_date else "Last 7 days"
 
         html = f"""<!DOCTYPE html>
 <html>
@@ -73,6 +83,7 @@ class WeeklyReportGenerator:
     <div class="container">
         <h1>📊 Equester Commercial Intelligence Report</h1>
         <p>Generated: {self.report_date}</p>
+        <p style="color: #666; font-size: 14px; margin: 5px 0;">📅 Period: {date_range_text}</p>
 
         <h2>💰 Revenue & Bookings</h2>
         <div>
@@ -167,5 +178,14 @@ class WeeklyReportGenerator:
 
 
 if __name__ == "__main__":
-    generator = WeeklyReportGenerator()
-    generator.save_report()
+    import sys
+    # Check if date range provided via command line
+    if len(sys.argv) > 1:
+        start_date = sys.argv[1]
+        end_date = sys.argv[2] if len(sys.argv) > 2 else None
+        generator = WeeklyReportGenerator(start_date=start_date, end_date=end_date)
+        filename = f"report_{start_date}_to_{end_date or datetime.now().strftime('%Y-%m-%d')}.html"
+    else:
+        generator = WeeklyReportGenerator()
+        filename = None
+    generator.save_report(filename)
