@@ -3,6 +3,7 @@
 import sys
 from pathlib import Path
 from datetime import datetime
+import pandas as pd
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -17,11 +18,19 @@ class WeeklyReportGenerator:
 
     def generate_html_report(self) -> str:
         """Generate HTML weekly report."""
-        bookings = self.analyzer.get_booking_trends(days=7)
-        sources = self.analyzer.get_booking_sources()
-        ads = self.analyzer.get_ad_performance(days=7)
-        social = self.analyzer.get_social_engagement()
-        roi = self.analyzer.get_roi_summary(days=7)
+        try:
+            bookings = self.analyzer.get_booking_trends(days=7)
+            sources = self.analyzer.get_booking_sources()
+            ads = self.analyzer.get_ad_performance(days=7)
+            social = self.analyzer.get_social_engagement()
+            roi = self.analyzer.get_roi_summary(days=7)
+        except Exception as e:
+            # Return empty report if data fetch fails
+            bookings = pd.DataFrame()
+            sources = pd.DataFrame()
+            ads = {"meta_ads": {}, "google_ads": {}}
+            social = {"instagram": {}, "facebook": {}, "tiktok": {}}
+            roi = {"total_ad_spend_aed": 0, "attributed_revenue_aed": 0, "roi": 0}
 
         html = f"""
         <!DOCTYPE html>
