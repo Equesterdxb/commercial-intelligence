@@ -16,7 +16,7 @@ class MetaCollector:
         self.ad_account_id = os.getenv("META_AD_ACCOUNT_ID")
         self.facebook_page_id = os.getenv("FACEBOOK_PAGE_ID")
         self.instagram_business_account_id = os.getenv("INSTAGRAM_BUSINESS_ACCOUNT_ID")
-        self.base_url = "https://graph.instagram.com/v18.0"
+        self.base_url = "https://graph.facebook.com/v18.0"
         self.db = Database()
 
     def _make_request(self, endpoint: str, params: Dict = None) -> Optional[Dict]:
