@@ -14,10 +14,7 @@ load_dotenv()
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from collectors.booking_collector import BookingCollector
-from collectors.meta_collector import MetaCollector
-from collectors.google_ads_collector import GoogleAdsCollector
 from collectors.google_analytics_collector import GoogleAnalyticsCollector
-from collectors.tiktok_collector import TikTokCollector
 
 
 class CommercialIntelligencePipeline:
@@ -35,7 +32,7 @@ class CommercialIntelligencePipeline:
         pipeline_start = time.time()
 
         # Bookings
-        print("[1/6] Fetching bookings...")
+        print("[1/2] Fetching bookings...")
         try:
             collector = BookingCollector()
             fetched, inserted = collector.fetch_and_load()
@@ -47,38 +44,8 @@ class CommercialIntelligencePipeline:
             print(f"  ✗ Bookings failed: {e}\n")
             self.results["bookings"] = (0, 0)
 
-        # Meta (Ads + Organic)
-        print("[2/6] Fetching Meta Ads...")
-        try:
-            collector = MetaCollector()
-            results = collector.fetch_and_load_all()
-            meta_total_fetched = sum(r[0] for r in results.values())
-            meta_total_inserted = sum(r[1] for r in results.values())
-            self.results["meta"] = results
-            self.total_records += meta_total_fetched
-            self.total_inserted += meta_total_inserted
-            for source, (fetched, inserted) in results.items():
-                print(f"  ✓ {source}: {fetched} fetched, {inserted} inserted")
-            print()
-        except Exception as e:
-            print(f"  ✗ Meta failed: {e}\n")
-            self.results["meta"] = {}
-
-        # Google Ads
-        print("[3/6] Fetching Google Ads...")
-        try:
-            collector = GoogleAdsCollector()
-            fetched, inserted = collector.fetch_and_load()
-            self.results["google_ads"] = (fetched, inserted)
-            self.total_records += fetched
-            self.total_inserted += inserted
-            print(f"  ✓ Google Ads: {fetched} fetched, {inserted} inserted\n")
-        except Exception as e:
-            print(f"  ✗ Google Ads failed: {e}\n")
-            self.results["google_ads"] = (0, 0)
-
         # GA4
-        print("[4/6] Fetching Google Analytics 4...")
+        print("[2/2] Fetching Google Analytics 4...")
         try:
             collector = GoogleAnalyticsCollector()
             fetched, inserted = collector.fetch_and_load()
@@ -89,19 +56,6 @@ class CommercialIntelligencePipeline:
         except Exception as e:
             print(f"  ✗ GA4 failed: {e}\n")
             self.results["ga4"] = (0, 0)
-
-        # TikTok
-        print("[5/6] Fetching TikTok...")
-        try:
-            collector = TikTokCollector()
-            fetched, inserted = collector.fetch_and_load()
-            self.results["tiktok"] = (fetched, inserted)
-            self.total_records += fetched
-            self.total_inserted += inserted
-            print(f"  ✓ TikTok: {fetched} fetched, {inserted} inserted\n")
-        except Exception as e:
-            print(f"  ✗ TikTok failed: {e}\n")
-            self.results["tiktok"] = (0, 0)
 
         elapsed = time.time() - pipeline_start
 
